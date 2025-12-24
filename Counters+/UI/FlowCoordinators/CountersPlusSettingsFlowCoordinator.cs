@@ -28,6 +28,7 @@ namespace CountersPlus.UI.FlowCoordinators
         [Inject] private VRInputModule vrInputModule;
         [Inject] private MenuShockwave menuShockwave;
         [Inject] private PlayerDataModel playerDataModel;
+        [Inject] private EnvironmentsListModel environmentsListModel;
 
         [Inject] private CountersPlusCreditsViewController credits;
         [Inject] private CountersPlusBlankViewController blank;
@@ -72,8 +73,11 @@ namespace CountersPlus.UI.FlowCoordinators
             // Make sure our menu persists through the transition
             persistentScenes.Add("MenuCore");
 
+            // 1.42.0 changed how tutorials are handled, so we need to create a GameplayAdditionalInformation instance
+            GameplayAdditionalInformation gameplayAdditionalInformation = new GameplayAdditionalInformation();
+
             var tutorialSceneSetup = MTHTutorialScenesSetup(ref menuTransitionsHelper); // Grab the scene transition setup data
-            tutorialSceneSetup.Init(playerDataModel.playerData.playerSpecificSettings);
+            tutorialSceneSetup.Init(playerDataModel.playerData.playerSpecificSettings, environmentsListModel, gameplayAdditionalInformation);
 
             menuEnvironmentManager.ShowEnvironmentType(MenuEnvironmentManager.MenuEnvironmentType.None);
 

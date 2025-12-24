@@ -1,3 +1,6 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace CountersPlus.Utils
@@ -8,6 +11,7 @@ namespace CountersPlus.Utils
         private static SharedCoroutineStarter? _instance;
         private static object _lock = new object();
         private static bool _applicationIsQuitting;
+        private readonly List<Action> _mainThreadActions = new List<Action>();
 
         public static SharedCoroutineStarter? instance
         {
@@ -45,9 +49,32 @@ namespace CountersPlus.Utils
             }
         }
 
+        public void StartCoroutineThreadSafe(IEnumerator coroutine)
+        {
+            lock (_mainThreadActions)
+            {
+                _mainThreadActions.Add(() => StartCoroutine(coroutine));
+            }
+        }
+
         protected void OnEnable()
         {
             DontDestroyOnLoad(this);
+        }
+
+        protected void Update()
+        {
+            lock (_mainThreadActions)
+            {
+                if (_mainThreadActions.Count > 0)
+                {
+                    foreach (var action in _mainThreadActions)
+                    {
+                        action?.Invoke();
+                    }
+                    _mainThreadActions.Clear();
+                }
+            }
         }
 
         protected virtual void OnDestroy()
