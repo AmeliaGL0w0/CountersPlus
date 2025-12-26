@@ -129,6 +129,15 @@ namespace CountersPlus.UI.ViewControllers.Editing
 
         private void ClearScreen()
         {
+            var dropdowns = settingsContainer.GetComponentsInChildren<HMUI.DropdownWithTableView>(false);
+            foreach (var dropdown in dropdowns)
+            {
+                if (dropdown.isActiveAndEnabled)
+                {
+                    dropdown.Hide(false);
+                }
+            }
+
             for (int i = 0; i < settingsContainer.transform.childCount; i++)
             {
                 GameObject child = settingsContainer.transform.GetChild(i).gameObject;
