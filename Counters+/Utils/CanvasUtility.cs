@@ -282,6 +282,8 @@ namespace CountersPlus.Utils
         {
             foreach (Canvas canvas in CanvasIDToCanvas.Values)
             {
+                if (canvas == null || canvas.gameObject == null) continue;
+                
                 foreach (Transform child in canvas.transform)
                 {
                     Object.Destroy(child.gameObject);
