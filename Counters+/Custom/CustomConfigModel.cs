@@ -13,6 +13,8 @@ namespace CountersPlus.Custom
         public override CounterPositions Position { get; set; } = CounterPositions.BelowCombo;
         [JsonProperty(nameof(Distance), Required = Required.DisallowNull)]
         public override int Distance { get; set; } = 0;
+        [JsonProperty(nameof(CanvasID), Required = Required.DisallowNull)]
+        public override int CanvasID { get; set; } = -1;
 
         [Ignore]
         internal CustomCounter AttachedCustomCounter;

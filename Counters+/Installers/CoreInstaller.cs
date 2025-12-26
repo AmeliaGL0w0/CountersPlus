@@ -11,6 +11,7 @@ namespace CountersPlus.Installers
     {
         public override void InstallBindings()
         {
+            Container.Bind<SharedCoroutineStarter>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
             Container.Bind<VersionUtility>().AsSingle().NonLazy();
 
             MainConfigModel mainConfig = Plugin.MainConfig;
@@ -61,9 +62,20 @@ namespace CountersPlus.Installers
         // Is this too much? Probably.
         private void BindCustomCounter(CustomCounter counter, CustomConfigModel settings)
         {
-            Container.Bind<ConfigModel>().WithId(counter.Name).To<CustomConfigModel>().FromInstance(settings).AsCached();
-            Container.Bind<ConfigModel>().To<CustomConfigModel>().FromInstance(settings).AsCached();
-            Container.BindInterfacesAndSelfTo<CustomConfigModel>().FromInstance(settings).WhenInjectedInto(counter.CounterType);
+            Container.Bind<ConfigModel>()
+                .WithId(counter.Name)
+                .To<CustomConfigModel>()
+                .FromMethod(ctx => counter.Config)
+                .AsCached();
+            
+            Container.Bind<ConfigModel>()
+                .To<CustomConfigModel>()
+                .FromMethod(ctx => counter.Config)
+                .AsCached();
+            
+            Container.BindInterfacesAndSelfTo<CustomConfigModel>()
+                .FromMethod(ctx => counter.Config)
+                .WhenInjectedInto(counter.CounterType);
         }
 
         private void InstallHeckCompatibility()

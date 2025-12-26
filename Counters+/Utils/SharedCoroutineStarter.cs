@@ -9,11 +9,10 @@ namespace CountersPlus.Utils
     internal class SharedCoroutineStarter : MonoBehaviour
     {
         private static SharedCoroutineStarter? _instance;
-        private static object _lock = new object();
+        private static readonly object _lock = new object();
         private static bool _applicationIsQuitting;
-        private readonly List<Action> _mainThreadActions = new List<Action>();
 
-        public static SharedCoroutineStarter? instance
+        public static SharedCoroutineStarter instance
         {
             get
             {
@@ -25,61 +24,39 @@ namespace CountersPlus.Utils
 
                 lock (_lock)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = FindObjectOfType<SharedCoroutineStarter>();
-
-                        if (FindObjectsOfType<SharedCoroutineStarter>().Length > 1)
-                        {
-                            Debug.LogError("[Singleton] Something went really wrong - there should never be more than 1 singleton! Reopening the scene might fix it.");
-                            return _instance;
-                        }
-
-                        if (_instance == null)
-                        {
-                            GameObject obj = new GameObject();
-                            _instance = obj.AddComponent<SharedCoroutineStarter>();
-                            obj.name = nameof(SharedCoroutineStarter);
-                            DontDestroyOnLoad(obj);
-                        }
-                    }
-
                     return _instance;
                 }
             }
         }
 
-        public void StartCoroutineThreadSafe(IEnumerator coroutine)
+        protected void Awake()
         {
-            lock (_mainThreadActions)
+            lock (_lock)
             {
-                _mainThreadActions.Add(() => StartCoroutine(coroutine));
-            }
-        }
-
-        protected void OnEnable()
-        {
-            DontDestroyOnLoad(this);
-        }
-
-        protected void Update()
-        {
-            lock (_mainThreadActions)
-            {
-                if (_mainThreadActions.Count > 0)
+                if (_instance == null)
                 {
-                    foreach (var action in _mainThreadActions)
-                    {
-                        action?.Invoke();
-                    }
-                    _mainThreadActions.Clear();
+                    _instance = this;
+                    _applicationIsQuitting = false;
+                    DontDestroyOnLoad(gameObject);
+                }
+                else if (_instance != this)
+                {
+                    Plugin.Logger.Warn("[Singleton] Duplicate instance of " + nameof(SharedCoroutineStarter) + " detected. Destroying duplicate.");
+                    Destroy(gameObject);
                 }
             }
         }
 
         protected virtual void OnDestroy()
         {
-            _applicationIsQuitting = true;
+            lock (_lock)
+            {
+                if (_instance == this)
+                {
+                    _applicationIsQuitting = true;
+                    _instance = null;
+                }
+            }
         }
     }
 }

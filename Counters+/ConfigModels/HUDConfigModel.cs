@@ -2,7 +2,6 @@
 using IPA.Config.Stores.Attributes;
 using IPA.Config.Stores.Converters;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -91,19 +90,13 @@ namespace CountersPlus.ConfigModels
         [UIAction("fire-update")]
         public void OnChanged(object _)
         {
-            Utils.SharedCoroutineStarter.instance?.StartCoroutineThreadSafe(DelayedFire(OnCanvasSettingsChanged));
+            OnCanvasSettingsChanged?.Invoke();
         }
 
         [UIAction("fire-apply")]
         public void OnApply()
         {
-            Utils.SharedCoroutineStarter.instance?.StartCoroutineThreadSafe(DelayedFire(OnCanvasSettingsApply));
-        }
-
-        private IEnumerator DelayedFire(Action action)
-        {
-            yield return new WaitForEndOfFrame();
-            action?.Invoke();
+            OnCanvasSettingsApply?.Invoke();
         }
         #endregion
     }

@@ -24,10 +24,15 @@ namespace CountersPlus.Utils
         {
             using (UnityWebRequest www = UnityWebRequest.Get("https://beatmods.com/api/v1/mod?search=Counters%2B"))
             {
+                www.SetRequestHeader("User-Agent", "BeatSaber-Mod/1.0");
+
                 yield return www.SendWebRequest();
-                if (www.isHttpError || www.isNetworkError)
+                if (www.result != UnityWebRequest.Result.Success)
                 {
-                    Plugin.Logger.Error("Failed to download version info.");
+                    Plugin.Logger.Error(
+                        $"Failed to download version info. " +
+                        $"Result={www.result}, Code={www.responseCode}, Error={www.error}"
+                    );
                     yield break;
                 }
                 BeatmodsResult[] results = JsonConvert.DeserializeObject<BeatmodsResult[]>(www.downloadHandler.text);

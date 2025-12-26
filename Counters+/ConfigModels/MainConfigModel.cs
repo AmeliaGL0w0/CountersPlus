@@ -2,7 +2,6 @@
 using CountersPlus.Custom;
 using IPA.Config.Stores.Attributes;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -48,22 +47,47 @@ namespace CountersPlus.ConfigModels
         public virtual Dictionary<string, CustomConfigModel> CustomCounters { get; set; } = new Dictionary<string, CustomConfigModel>();
 
         public event Action OnConfigChanged;
+        public virtual void OnReload()
+        {
+            SyncCustomCounterConfigs();
+        }
 
         public virtual void Changed()
         {
-            Utils.SharedCoroutineStarter.instance?.StartCoroutineThreadSafe(DelayedFire(OnConfigChanged));
+            OnConfigChanged?.Invoke();
+        }
+
+        private void SyncCustomCounterConfigs()
+        {
+            foreach (var customCounter in Plugin.LoadedCustomCounters)
+            {
+                if (CustomCounters.TryGetValue(customCounter.Name, out CustomConfigModel reloadedConfig))
+                {
+                    CustomConfigModel existingConfig = customCounter.Config;
+
+                    if (existingConfig != null && existingConfig != reloadedConfig)
+                    {
+                        existingConfig.Enabled = reloadedConfig.Enabled;
+                        existingConfig.Position = reloadedConfig.Position;
+                        existingConfig.Distance = reloadedConfig.Distance;
+                        existingConfig.CanvasID = reloadedConfig.CanvasID;
+
+                        CustomCounters[customCounter.Name] = existingConfig;
+                    }
+                    else if (existingConfig == null)
+                    {
+                        reloadedConfig.DisplayName = customCounter.Name;
+                        reloadedConfig.AttachedCustomCounter = customCounter;
+                        customCounter.Config = reloadedConfig;
+                    }
+                }    
+            }
         }
 
         public List<object> Offsets => new List<object> { 0, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1 };
 
         [UIValue("IsAprilFools")]
         public bool IsAprilFools => DateTime.Now.Month == 4 && DateTime.Now.Day == 1;
-
-        private IEnumerator DelayedFire(Action action)
-        {
-            yield return new WaitForEndOfFrame();
-            action?.Invoke();
-        }
     }
 
     public enum CounterPositions { BelowCombo, AboveCombo, BelowMultiplier, AboveMultiplier, BelowEnergy, AboveHighway }
