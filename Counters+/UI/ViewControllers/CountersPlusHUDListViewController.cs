@@ -4,6 +4,7 @@ using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.Parser;
 using BeatSaberMarkupLanguage.ViewControllers;
 using CountersPlus.ConfigModels;
+using CountersPlus.Custom;
 using CountersPlus.UI.FlowCoordinators;
 using CountersPlus.UI.ViewControllers.Editing;
 using CountersPlus.Utils;
@@ -33,6 +34,7 @@ namespace CountersPlus.UI.ViewControllers
         [Inject] private CanvasUtility canvasUtility;
         [Inject] private LazyInject<CountersPlusSettingsFlowCoordinator> flowCoordinator;
         [Inject] private LazyInject<CountersPlusHUDEditViewController> hudEdit;
+        [Inject] private LazyInject<CountersPlusCounterEditViewController> counterEdit;
 
         protected override void DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
         {
@@ -106,6 +108,7 @@ namespace CountersPlus.UI.ViewControllers
             canvasUtility.RegisterNewCanvas(settings, hudConfig.OtherCanvasSettings.Count);
             hudConfig.OtherCanvasSettings.Add(settings);
             mainConfig.HUDConfig = hudConfig;
+            counterEdit.Value.ClearCachedSettings();
             RefreshData();
         }
 
@@ -114,14 +117,58 @@ namespace CountersPlus.UI.ViewControllers
         {
             DeactivateModals();
             if (SelectedCanvas == -1) return;
+            
+            // Update all counters using this canvas to use the main canvas instead
             IEnumerable<ConfigModel> needToUpdate = flowCoordinator.Value.AllConfigModels.Where(x => x.CanvasID == SelectedCanvas);
-            for (int i = 0; i < needToUpdate.Count(); i++)
+            foreach (var config in needToUpdate)
             {
-                needToUpdate.ElementAt(i).CanvasID = -1;
+                config.CanvasID = -1;
             }
+            
+            // Update all counters using canvases after this one (their IDs will shift down by 1)
+            IEnumerable<ConfigModel> needToShift = flowCoordinator.Value.AllConfigModels.Where(x => x.CanvasID > SelectedCanvas);
+            foreach (var config in needToShift)
+            {
+                config.CanvasID--;
+            }
+            
+            // Save all modified custom counter configs back to the main config
+            foreach (var config in flowCoordinator.Value.AllConfigModels)
+            {
+                if (config is CustomConfigModel customConfig && customConfig.AttachedCustomCounter != null)
+                {
+                    mainConfig.CustomCounters[customConfig.AttachedCustomCounter.Name] = customConfig;
+                }
+            }
+            
+            // Unregister and destroy the deleted canvas
             canvasUtility.UnregisterCanvas(SelectedCanvas);
+            
+            // Remove from settings list
             hudConfig.OtherCanvasSettings.RemoveAt(SelectedCanvas);
+            
+            // Now rebuild ALL canvas mappings from scratch to ensure consistency
+            // Clear all existing mappings first (except -1 which is the main canvas)
+            for (int i = 0; i < hudConfig.OtherCanvasSettings.Count + 1; i++) // +1 because we just removed one
+            {
+                try
+                {
+                    canvasUtility.UnregisterCanvas(i);
+                }
+                catch
+                {
+                    // Canvas might not exist, that's okay
+                }
+            }
+            
+            // Re-register all canvases with their new indices
+            for (int i = 0; i < hudConfig.OtherCanvasSettings.Count; i++)
+            {
+                canvasUtility.RegisterNewCanvas(hudConfig.OtherCanvasSettings[i], i);
+            }
+            
             mainConfig.HUDConfig = hudConfig;
+            counterEdit.Value.ClearCachedSettings();
             SelectedCanvas--;
             RefreshData();
             flowCoordinator.Value.RefreshAllMockCounters();

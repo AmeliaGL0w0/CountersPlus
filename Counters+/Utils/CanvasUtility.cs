@@ -105,11 +105,18 @@ namespace CountersPlus.Utils
 
         public void UnregisterCanvas(int id)
         {
-            Canvas canvas = CanvasIDToCanvas[id];
+            if (!CanvasIDToCanvas.TryGetValue(id, out Canvas canvas))
+            {
+                // Canvas doesn't exist, nothing to unregister
+                return;
+            }
 
             CanvasIDToCanvas.Remove(id);
             CanvasToSettings.Remove(canvas);
-            Object.Destroy(canvas.gameObject);
+            if (canvas != null && canvas.gameObject != null)
+            {
+                Object.Destroy(canvas.gameObject);
+            }
         }
 
         public Canvas CreateCanvasWithConfig(HUDCanvas canvasSettings)

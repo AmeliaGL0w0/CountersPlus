@@ -127,6 +127,22 @@ namespace CountersPlus.UI.ViewControllers.Editing
             scrollView.gameObject.SetActive(true);
         }
 
+        public void ClearCachedSettings()
+        {
+            // Destroy all cached GameObjects to force BSML to rebuild
+            foreach (var cache in cachedSettings.Values)
+            {
+                foreach (GameObject obj in cache)
+                {
+                    if (obj != null)
+                    {
+                        Object.Destroy(obj);
+                    }
+                }
+            }
+            cachedSettings.Clear();
+        }
+
         private void ClearScreen()
         {
             var dropdowns = settingsContainer.GetComponentsInChildren<HMUI.DropdownWithTableView>(false);
@@ -143,12 +159,17 @@ namespace CountersPlus.UI.ViewControllers.Editing
                 GameObject child = settingsContainer.transform.GetChild(i).gameObject;
                 if (child.activeSelf)
                 {
-                    if (!cachedSettings.TryGetValue(editingConfigModel, out var cache))
+                    // Only cache if this model already has a cache (meaning we're switching between views)
+                    // Don't cache if we just cleared the cache (after canvas changes)
+                    if (editingConfigModel != null && cachedSettings.ContainsKey(editingConfigModel))
                     {
-                        cache = new HashSet<GameObject>() { };
-                        cachedSettings.Add(editingConfigModel, cache);
+                        if (!cachedSettings.TryGetValue(editingConfigModel, out var cache))
+                        {
+                            cache = new HashSet<GameObject>() { };
+                            cachedSettings.Add(editingConfigModel, cache);
+                        }
+                        cache.Add(child);
                     }
-                    cache.Add(child);
                     child.SetActive(false);
                 }
             }
