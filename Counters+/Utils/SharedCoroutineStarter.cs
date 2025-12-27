@@ -33,18 +33,30 @@ namespace CountersPlus.Utils
             }
         }
 
+        private void Update()
+        {
+            // Process any queued routines on the main thread
+            lock (_queuedRoutines)
+            {
+                if (_queuedRoutines.Count > 0)
+                {
+                    foreach (var routine in _queuedRoutines)
+                    {
+                        StartCoroutine(routine);
+                    }
+                    _queuedRoutines.Clear();
+                }
+            }
+        }
+
         public static Coroutine Run(IEnumerator routine)
         {
-            if (_instance == null)
+            // Enqueue the routine, it will run during Update on main thread
+            lock (_queuedRoutines)
             {
-                lock (_queuedRoutines)
-                {
-                    _queuedRoutines.Add(routine);
-                }
-                return null;
+                _queuedRoutines.Add(routine);
             }
-
-            return _instance.StartCoroutine(routine);
+            return null;
         }
 
         public static void Stop(Coroutine coroutine)

@@ -49,6 +49,11 @@ namespace CountersPlus.ConfigModels
         public virtual Dictionary<string, CustomConfigModel> CustomCounters { get; set; } = new Dictionary<string, CustomConfigModel>();
 
         public event Action OnConfigChanged;
+        public virtual void OnReload()
+        {
+            // This should be thread-safe
+            SyncCustomCounterConfigs();
+        }
         public virtual void Changed()
         {
             SharedCoroutineStarter.Run(DelayedFire(OnConfigChanged));
@@ -58,6 +63,34 @@ namespace CountersPlus.ConfigModels
         {
             yield return new WaitForEndOfFrame();
             action?.Invoke();
+        }
+
+        // This is to update external counters when editing the json file directly.
+        private void SyncCustomCounterConfigs()
+        {
+            foreach (var customCounter in Plugin.LoadedCustomCounters)
+            {
+                if (CustomCounters.TryGetValue(customCounter.Name, out CustomConfigModel reloadedConfig))
+                {
+                    CustomConfigModel existingConfig = customCounter.Config;
+
+                    if (existingConfig != null && existingConfig != reloadedConfig)
+                    {
+                        existingConfig.Enabled = reloadedConfig.Enabled;
+                        existingConfig.Position = reloadedConfig.Position;
+                        existingConfig.Distance = reloadedConfig.Distance;
+                        existingConfig.CanvasID = reloadedConfig.CanvasID;
+
+                        CustomCounters[customCounter.Name] = existingConfig;
+                    }
+                    else if (existingConfig == null)
+                    {
+                        reloadedConfig.DisplayName = customCounter.Name;
+                        reloadedConfig.AttachedCustomCounter = customCounter;
+                        customCounter.Config = reloadedConfig;
+                    }
+                }
+            }
         }
 
         public List<object> Offsets => new List<object> { 0, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1 };
