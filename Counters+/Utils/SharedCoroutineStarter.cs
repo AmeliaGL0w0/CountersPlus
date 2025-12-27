@@ -49,14 +49,13 @@ namespace CountersPlus.Utils
             }
         }
 
-        public static Coroutine Run(IEnumerator routine)
+        public static void Run(IEnumerator routine)
         {
             // Enqueue the routine, it will run during Update on main thread
             lock (_queuedRoutines)
             {
                 _queuedRoutines.Add(routine);
             }
-            return null;
         }
 
         public static void Stop(Coroutine coroutine)
