@@ -1,7 +1,9 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
+using CountersPlus.Utils;
 using IPA.Config.Stores.Attributes;
 using IPA.Config.Stores.Converters;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -90,13 +92,19 @@ namespace CountersPlus.ConfigModels
         [UIAction("fire-update")]
         public void OnChanged(object _)
         {
-            OnCanvasSettingsChanged?.Invoke();
+            SharedCoroutineStarter.Run(DelayedFire(OnCanvasSettingsChanged));
         }
 
         [UIAction("fire-apply")]
         public void OnApply()
         {
-            OnCanvasSettingsApply?.Invoke();
+            SharedCoroutineStarter.Run(DelayedFire(OnCanvasSettingsApply));
+        }
+
+        private IEnumerator DelayedFire(Action action)
+        {
+            yield return new WaitForEndOfFrame();
+            action?.Invoke();
         }
         #endregion
     }

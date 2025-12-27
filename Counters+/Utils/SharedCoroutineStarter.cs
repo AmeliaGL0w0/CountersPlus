@@ -1,62 +1,56 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace CountersPlus.Utils
 {
-    // Mostly a copy-paste of PersistentSingleton<T> from game version < 1.31.0.
-    internal class SharedCoroutineStarter : MonoBehaviour
+    internal sealed class SharedCoroutineStarter : MonoBehaviour
     {
-        private static SharedCoroutineStarter? _instance;
-        private static readonly object _lock = new object();
-        private static bool _applicationIsQuitting;
+        private static SharedCoroutineStarter _instance;
+        private static readonly List<IEnumerator> _queuedRoutines = new List<IEnumerator>();
 
-        public static SharedCoroutineStarter instance
+        private void Awake()
         {
-            get
+            if (_instance != null && _instance != this)
             {
-                if (_applicationIsQuitting)
-                {
-                    Debug.LogWarning("[Singleton] Instance '" + nameof(SharedCoroutineStarter) + "' already destroyed on application quit. Won't create again - returning null.");
-                    return null;
-                }
+                Destroy(gameObject);
+                return;
+            }
 
-                lock (_lock)
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+
+                lock (_queuedRoutines)
                 {
-                    return _instance;
+                    foreach (var routine in _queuedRoutines)
+                    {
+                        StartCoroutine(routine);
+                    }
+                    _queuedRoutines.Clear();
                 }
             }
         }
 
-        protected void Awake()
+        public static Coroutine Run(IEnumerator routine)
         {
-            lock (_lock)
+            if (_instance == null)
             {
-                if (_instance == null)
+                lock (_queuedRoutines)
                 {
-                    _instance = this;
-                    _applicationIsQuitting = false;
-                    DontDestroyOnLoad(gameObject);
+                    _queuedRoutines.Add(routine);
                 }
-                else if (_instance != this)
-                {
-                    Plugin.Logger.Warn("[Singleton] Duplicate instance of " + nameof(SharedCoroutineStarter) + " detected. Destroying duplicate.");
-                    Destroy(gameObject);
-                }
+                return null;
             }
+
+            return _instance.StartCoroutine(routine);
         }
 
-        protected virtual void OnDestroy()
+        public static void Stop(Coroutine coroutine)
         {
-            lock (_lock)
-            {
-                if (_instance == this)
-                {
-                    _applicationIsQuitting = true;
-                    _instance = null;
-                }
-            }
+            if (_instance != null && coroutine != null)
+                _instance.StopCoroutine(coroutine);
         }
     }
 }

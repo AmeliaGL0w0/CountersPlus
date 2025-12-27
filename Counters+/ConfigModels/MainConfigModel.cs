@@ -1,7 +1,9 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using CountersPlus.Custom;
+using CountersPlus.Utils;
 using IPA.Config.Stores.Attributes;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -47,41 +49,15 @@ namespace CountersPlus.ConfigModels
         public virtual Dictionary<string, CustomConfigModel> CustomCounters { get; set; } = new Dictionary<string, CustomConfigModel>();
 
         public event Action OnConfigChanged;
-        public virtual void OnReload()
-        {
-            SyncCustomCounterConfigs();
-        }
-
         public virtual void Changed()
         {
-            OnConfigChanged?.Invoke();
+            SharedCoroutineStarter.Run(DelayedFire(OnConfigChanged));
         }
 
-        private void SyncCustomCounterConfigs()
+        private IEnumerator DelayedFire(Action action)
         {
-            foreach (var customCounter in Plugin.LoadedCustomCounters)
-            {
-                if (CustomCounters.TryGetValue(customCounter.Name, out CustomConfigModel reloadedConfig))
-                {
-                    CustomConfigModel existingConfig = customCounter.Config;
-
-                    if (existingConfig != null && existingConfig != reloadedConfig)
-                    {
-                        existingConfig.Enabled = reloadedConfig.Enabled;
-                        existingConfig.Position = reloadedConfig.Position;
-                        existingConfig.Distance = reloadedConfig.Distance;
-                        existingConfig.CanvasID = reloadedConfig.CanvasID;
-
-                        CustomCounters[customCounter.Name] = existingConfig;
-                    }
-                    else if (existingConfig == null)
-                    {
-                        reloadedConfig.DisplayName = customCounter.Name;
-                        reloadedConfig.AttachedCustomCounter = customCounter;
-                        customCounter.Config = reloadedConfig;
-                    }
-                }    
-            }
+            yield return new WaitForEndOfFrame();
+            action?.Invoke();
         }
 
         public List<object> Offsets => new List<object> { 0, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1 };

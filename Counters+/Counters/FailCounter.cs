@@ -53,7 +53,7 @@ namespace CountersPlus.Counters
         private void SlowlyAnnoyThePlayerBecauseTheyFailed()
         {
             counter.text = (count + 1).ToString();
-            Utils.SharedCoroutineStarter.instance.StartCoroutine(ChangeTextColorToAnnoyThePlayerEvenMore());
+            Utils.SharedCoroutineStarter.Run(ChangeTextColorToAnnoyThePlayerEvenMore());
         }
 
         private IEnumerator ChangeTextColorToAnnoyThePlayerEvenMore()

@@ -26,7 +26,7 @@ namespace CountersPlus.Counters
             leftSaber = saberManager.leftSaber;
             rightSaber = saberManager.rightSaber;
             GenerateBasicText("Spinometer", out spinometer);
-            Utils.SharedCoroutineStarter.instance.StartCoroutine(SecondTick());
+            Utils.SharedCoroutineStarter.Run(SecondTick());
         }
 
         public void Tick()

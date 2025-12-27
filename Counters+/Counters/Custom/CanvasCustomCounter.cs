@@ -29,7 +29,7 @@ namespace CountersPlus.Counters.Custom
             }
             else if (!string.IsNullOrEmpty(CanvasObjectName))
             {
-                Utils.SharedCoroutineStarter.instance.StartCoroutine(FindCanvasByString());
+                Utils.SharedCoroutineStarter.Run(FindCanvasByString());
             }
             else
             {

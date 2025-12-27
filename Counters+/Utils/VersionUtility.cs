@@ -17,7 +17,7 @@ namespace CountersPlus.Utils
             // I could grab this straight from PluginMetadata but this is for cleanness.
             PluginVersion = PluginManager.GetPlugin("Counters+").HVersion;
 
-            SharedCoroutineStarter.instance.StartCoroutine(GetBeatModsVersion());
+            SharedCoroutineStarter.Run(GetBeatModsVersion());
         }
 
         private IEnumerator GetBeatModsVersion()
