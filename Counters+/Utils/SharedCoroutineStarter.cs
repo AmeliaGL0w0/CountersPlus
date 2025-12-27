@@ -1,5 +1,6 @@
+using IPA.Utilities;
 using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace CountersPlus.Utils
@@ -7,7 +8,6 @@ namespace CountersPlus.Utils
     internal sealed class SharedCoroutineStarter : MonoBehaviour
     {
         private static SharedCoroutineStarter _instance;
-        private static readonly List<IEnumerator> _queuedRoutines = new List<IEnumerator>();
 
         private void Awake()
         {
@@ -21,47 +21,30 @@ namespace CountersPlus.Utils
             {
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
-
-                lock (_queuedRoutines)
-                {
-                    foreach (var routine in _queuedRoutines)
-                    {
-                        StartCoroutine(routine);
-                    }
-                    _queuedRoutines.Clear();
-                }
             }
         }
 
-        private void Update()
+        public static async Task<Coroutine> Run(IEnumerator routine)
         {
-            // Process any queued routines on the main thread
-            lock (_queuedRoutines)
-            {
-                if (_queuedRoutines.Count > 0)
-                {
-                    foreach (var routine in _queuedRoutines)
-                    {
-                        StartCoroutine(routine);
-                    }
-                    _queuedRoutines.Clear();
-                }
-            }
+            await UnityGame.SwitchToMainThreadAsync();
+
+            if (_instance == null)
+                return null;
+
+            return _instance.StartCoroutine(routine);
         }
 
-        public static void Run(IEnumerator routine)
+        public static async Task Stop(Coroutine coroutine)
         {
-            // Enqueue the routine, it will run during Update on main thread
-            lock (_queuedRoutines)
-            {
-                _queuedRoutines.Add(routine);
-            }
-        }
+            if (coroutine == null)
+                return;
 
-        public static void Stop(Coroutine coroutine)
-        {
-            if (_instance != null && coroutine != null)
-                _instance.StopCoroutine(coroutine);
+            await UnityGame.SwitchToMainThreadAsync();
+
+            if (_instance == null)
+                return;
+
+            _instance.StopCoroutine(coroutine);
         }
     }
 }
