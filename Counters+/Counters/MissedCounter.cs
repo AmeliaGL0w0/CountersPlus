@@ -21,7 +21,14 @@ namespace CountersPlus.Counters
 
         public void OnNoteMiss(NoteData data)
         {
-            if (data.colorType != ColorType.None && data.gameplayType != NoteData.GameplayType.BurstSliderElement) counter.text = (++notesMissed).ToString();
+            if (Settings.CountChainLinks == false)
+            {
+                if (data.colorType != ColorType.None && data.gameplayType != NoteData.GameplayType.BurstSliderElement) counter.text = (++notesMissed).ToString();
+            }
+            else
+            {
+                if (data.colorType != ColorType.None) counter.text = (++notesMissed).ToString();
+            }
         }
     }
 }
