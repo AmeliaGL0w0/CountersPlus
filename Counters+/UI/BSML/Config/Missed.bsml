@@ -1,3 +1,4 @@
 ﻿<vertical spacing='1' horizontal-fit='PreferredSize'>
   <checkbox-setting text='Include Bad Cuts' apply-on-change='true' value='CountBadCuts' hover-hint='Bad cuts count towards the Missed counter.'/>
+  <checkbox-setting text='Include Chain Links' apply-on-change='true' value='CountChainLinks' hover-hint='Chain link misses count towards the Missed counter.'/>
 </vertical>
