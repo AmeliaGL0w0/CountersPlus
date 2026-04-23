@@ -15,5 +15,8 @@ namespace CountersPlus.ConfigModels
 
         [UIValue(nameof(CountBadCuts))]
         public virtual bool CountBadCuts { get; set; } = true;
+
+        [UIValue(nameof(CountChainLinks))]
+        public virtual bool CountChainLinks { get; set; } = true;
     }
 }
